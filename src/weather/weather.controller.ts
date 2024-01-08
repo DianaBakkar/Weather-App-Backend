@@ -1,27 +1,41 @@
-import { Controller, Get, Param,Logger } from '@nestjs/common';
+import { Controller, Get, Param, Logger } from '@nestjs/common';
+import { WeatherData } from 'src/entities/weather-data.entity'; 
+import { WeatherService } from 'src/weather/weather.service';
 import axios from 'axios';
 
 const logger = new Logger('WeatherController');
 
-
-
 @Controller('weather')
 export class WeatherController {
-  @Get(':city')
-  async getWeather(@Param('city') city: string): Promise<any> {
-    try {
-      logger.log('Received request for city:', city);
-      logger.log('API Key:', process.env.API_KEY);
+    constructor(private readonly weatherService: WeatherService) {}
 
-      const apiKey = process.env.API_KEY;
-      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`;
-      logger.log('API URL:', apiUrl);
-      const response = await axios.get(apiUrl);
-      const weatherData = response.data;
-      return weatherData;
-    } catch (error) {
-      logger.error('Error fetching weather data:', error);
-      return { error: 'Failed to fetch weather data' };
+    @Get(':city')
+    async getWeather(@Param('city') city: string): Promise<any> {
+        try {
+            logger.log('Received request for city:', city);
+            logger.log('API Key:', process.env.API_KEY);
+
+            const apiKey = process.env.API_KEY;
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`;
+            logger.log('API URL:', apiUrl);
+            const response = await axios.get(apiUrl);
+            const weatherDataFromAPI = response.data;
+
+            const newWeatherData = new WeatherData();
+            newWeatherData.temperature = weatherDataFromAPI.main.temp || 0;
+            newWeatherData.humidity = weatherDataFromAPI.main.humidity || 0;
+            newWeatherData.wind_speed = weatherDataFromAPI.wind.speed || 0;
+            newWeatherData.cloudiness = weatherDataFromAPI.clouds.all || 0;
+            newWeatherData.rain_volume = weatherDataFromAPI.rain?.['1h'] || 0;
+            newWeatherData.timestamp = new Date();
+
+            // Save the WeatherData entity using the WeatherService
+            const savedWeatherData = await this.weatherService.saveWeatherData(newWeatherData);
+
+            return savedWeatherData;
+        } catch (error) {
+            logger.error('Error fetching weather data:', error);
+            return { error: 'Failed to fetch weather data' };
+        }
     }
-  }
 }
