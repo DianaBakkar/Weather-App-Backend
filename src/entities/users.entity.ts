@@ -3,8 +3,9 @@ import { Location } from './location.entity';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
+
 
   @Column({ unique: true })
   username: string;

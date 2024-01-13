@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Logger } from '@nestjs/common';
+import { Controller, Get,UseGuards,Request, Param, Logger } from '@nestjs/common';
 import { WeatherData } from 'src/entities/weather-data.entity'; 
 import { WeatherService } from 'src/weather/weather.service';
+import { JwtAuthGuard } from 'src/app/auth/jwt-auth.guard';
 import axios from 'axios';
 
 const logger = new Logger('WeatherController');
@@ -8,6 +9,15 @@ const logger = new Logger('WeatherController');
 @Controller('weather')
 export class WeatherController {
     constructor(private readonly weatherService: WeatherService) {}
+
+    //@UseGuards(JwtAuthGuard)
+    @Get('saved-locations/:userId')
+    async getSavedLocationsForUser(@Param('userId') userId: number) {
+      const savedLocations = await this.weatherService.getSavedLocationsForUser(userId);
+      logger.log('Saved Locations:',savedLocations);
+      return savedLocations;
+      
+    }
 
     @Get(':city')
     async getWeather(@Param('city') city: string): Promise<any> {
@@ -29,7 +39,7 @@ export class WeatherController {
             newWeatherData.rain_volume = weatherDataFromAPI.rain?.['1h'] || 0;
             newWeatherData.timestamp = new Date();
 
-            // Save the WeatherData entity using the WeatherService
+           
             const savedWeatherData = await this.weatherService.saveWeatherData(newWeatherData);
 
             return savedWeatherData;
@@ -37,5 +47,8 @@ export class WeatherController {
             logger.error('Error fetching weather data:', error);
             return { error: 'Failed to fetch weather data' };
         }
+
+
+      
     }
 }

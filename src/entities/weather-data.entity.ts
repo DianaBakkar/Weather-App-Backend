@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Location } from './location.entity';
+
 
 @Entity()
 export class WeatherData {
